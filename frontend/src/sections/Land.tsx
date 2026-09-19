@@ -8,9 +8,10 @@ export default function Land() {
     <>
       <button
         onClick={() => setHidden(!hidden)}
-        className="absolute z-10 right-[50%] px-10 pt-2 pb-1 rounded-t-full bg-amber-50 hover:opacity-80 transition-all"
+        className="absolute left-[50%] z-10 px-10 pt-2 pb-1 rounded-t-full bg-amber-50 hover:opacity-80 transition-all"
         style={{
           bottom: hidden ? "0" : "33%",
+          transform: "translate(-50%, 0)",
         }}
       >
         <Menu size={16} />
