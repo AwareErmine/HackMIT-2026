@@ -4,4 +4,4 @@ We are using the [uv package manager](https://docs.astral.sh/uv/getting-started/
 
 Just run `uv add` to install everything needed :)
 
-To run the server, run `uv run backend`
+To run the server, run `uv run --env-file .env backend`
