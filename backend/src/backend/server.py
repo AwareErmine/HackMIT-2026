@@ -10,7 +10,7 @@ def server() -> None:
     # TODO: add client that listens for audio data to send?
     obj = {"hello": "world"}
     print("SERVER: SENDING MESSAGE")
-    sock.sendto(json.dumps(obj).encode('utf-8'), (IP_ADDR, PORT))
+    sock.sendto(json.dumps(obj).encode('utf-8'), (IP_ADDR, PORT)) # we will want JSON for the front-end
 
     sock.close()
 
