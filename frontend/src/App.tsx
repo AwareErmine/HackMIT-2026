@@ -10,7 +10,7 @@ function App() {
   });
 
   return (
-    <div>
+    <div className="overflow-clip h-screen relative">
       <Land />
       <Fishes />
       <div className="flex flex-col h-screen">
