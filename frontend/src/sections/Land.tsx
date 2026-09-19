@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Menu } from "lucide-react";
 
 export default function Land() {
   const [hidden, setHidden] = useState(true);
@@ -7,12 +8,12 @@ export default function Land() {
     <>
       <button
         onClick={() => setHidden(!hidden)}
-        className="absolute z-10 right-[50%] px-5 pt-2 rounded-t-full bg-amber-50 transition-all"
+        className="absolute z-10 right-[50%] px-10 pt-2 pb-1 rounded-t-full bg-amber-50 hover:opacity-80 transition-all"
         style={{
           bottom: hidden ? "0" : "33%",
         }}
       >
-        land
+        <Menu size={16} />
       </button>
       <div
         className="absolute z-1 bottom-0 w-screen h-[33%] transition-all bg-amber-50"
