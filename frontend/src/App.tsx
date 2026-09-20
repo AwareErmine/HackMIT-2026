@@ -14,7 +14,7 @@ function App() {
       <Land />
       <Fishes />
       <div className="flex flex-col h-screen">
-        <Sky className="flex-3 bg-sky-200 " />
+        <Sky className="flex-3 bg-sky-200" />
         <Water className="flex-4 bg-linear-to-b from-sky-300 to-sky-900" />
       </div>
     </div>
