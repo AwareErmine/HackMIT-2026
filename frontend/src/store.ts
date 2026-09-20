@@ -23,7 +23,7 @@ export const useFishStore = create<State & Action>((set, get) => ({
     { volume: 10, id: "Aramie", left: Math.random() * window.innerWidth * 0.8 },
     { volume: 10, id: "Joyce", left: Math.random() * window.innerWidth * 0.8 },
     {
-      volume: 10,
+      volume: 20,
       id: "Rebecca",
       left: Math.random() * window.innerWidth * 0.8,
     },

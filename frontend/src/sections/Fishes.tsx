@@ -1,31 +1,44 @@
 import { useFishStore } from "../store";
-import { type Ref } from "react";
+import { useEffect, type Ref } from "react";
 import { useDrag, useDrop } from "react-dnd";
 import { fishGifs, fishPngs } from "../images";
+import useMousePosition from "../hooks";
+import { getEmptyImage } from "react-dnd-html5-backend";
 
 function Fish({ id, idx }: { id: string; idx: number }) {
   const { left, volume } = useFishStore((state) =>
     state.fishes.find((f) => f.id == id),
   )!;
-  const [{ isDragging }, drag, dragPreview] = useDrag(() => ({
+  const [{ isDragging }, drag, preview] = useDrag(() => ({
     type: "fish",
     item: { id },
     collect: (monitor) => ({
       isDragging: !!monitor.isDragging(),
     }),
   }));
+  const mousePosition = useMousePosition();
+  useEffect(() => {
+    preview(getEmptyImage(), { captureDraggingState: true });
+  }, [preview]);
   return isDragging ? (
     <div
-      ref={dragPreview as unknown as Ref<HTMLDivElement>}
-      style={{ top: `${100 - volume}%`, left: `${left}px` }}
-      className="absolute"
+      style={{
+        top: `${mousePosition.y}px`,
+        left: `${mousePosition.x}px`,
+        transform: "translate(-50%, -50%)",
+      }}
+      className="fixed"
     >
       <img className="w-20" src={fishGifs[idx % fishGifs.length]} />
     </div>
   ) : (
     <div
       ref={drag as unknown as Ref<HTMLDivElement>}
-      style={{ top: `${100 - volume}%`, left: `${left}px` }}
+      style={{
+        top: `${100 - volume}%`,
+        left: `${left}px`,
+        opacity: isDragging ? "0%" : "100%",
+      }}
       className="absolute"
     >
       <img className="w-20" src={fishPngs[idx % fishPngs.length]} />
