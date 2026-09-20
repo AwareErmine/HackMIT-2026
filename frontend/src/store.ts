@@ -12,8 +12,7 @@ type State = {
 };
 
 type Action = {
-  addFish: (f: Fish) => void;
-  removeFish: (fid: Fish["id"]) => void;
+  setFishes: (f: Fish[]) => void;
   moveFish: (fid: Fish["id"], volume: number, left: number) => void;
   getFish: (fid: Fish["id"]) => Fish | undefined;
   syncFishies: (fishies: BackendFish[]) => void;
@@ -22,17 +21,7 @@ type Action = {
 export const useFishStore = create<State & Action>((set, get) => ({
   fishes: [],
   getFish: (fid) => get().fishes.find((f) => f.id == fid),
-  addFish: (f) =>
-    set(({ fishes }) => ({
-      fishes: [...fishes, f].sort((a, b) => a.id.localeCompare(b.id)),
-    })),
-  removeFish: (fid) =>
-    set(({ fishes }) => ({
-      fishes: fishes
-        .filter((f) => f.id !== fid)
-        .sort((a, b) => a.id.localeCompare(b.id)),
-    })),
-  moveFish: (fid, volume, left) =>
+  moveFish: (fid, volume, left) => {
     set(({ fishes }) => {
       const fish = fishes.find((f) => f.id == fid);
       return {
