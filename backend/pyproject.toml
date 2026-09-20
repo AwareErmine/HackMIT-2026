@@ -7,7 +7,11 @@ authors = [
     { name = "awareermine", email = "aramie.ewen@gmail.com" }
 ]
 requires-python = ">=3.11"
-dependencies = []
+dependencies = [
+    "sounddevice",
+    "numpy",
+    "diart",
+]
 
 [project.scripts]
 backend = "backend:main"
