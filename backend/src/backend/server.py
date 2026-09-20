@@ -21,12 +21,14 @@ server() is the entry point called by backend/__init__.py:main(), which in
 turn is what arduino/python/main.py runs once deployed on the UNO Q via App Lab.
 """
 
+import os
 import threading
 
 import numpy as np
 import uvicorn
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from pydantic import BaseModel, Field
 
 from backend.audio_boost import DEFAULT_GAIN, MAX_GAIN, AudioBooster
 from backend.audio_output import AudioOutput
@@ -37,6 +39,11 @@ from backend.speaker_detect import SpeakerDetector
 
 SPAWN_VOLUME = 20    # the frontend's default fish spawn position
 SPAWN_GAIN = DEFAULT_GAIN  # what that position means: normal, unmodified volume
+
+
+class FishUpdate(BaseModel):
+    id: str = Field(min_length=1)
+    volume: float = Field(ge=0, le=100)
 
 def volume_to_gain(volume: float) -> float:
     # piecewise: 0-20% maps to 0.0-SPAWN_GAIN (muted -> normal), 20-100% maps to
@@ -58,6 +65,14 @@ def build_app(detector: SpeakerDetector, speaker_gains: dict[str, float]) -> Fas
     app = FastAPI()
     app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
 
+    @app.get("/health")
+    def get_health():
+        return {
+            "ok": True,
+            "service": "hackmit-backend",
+            "mode": "control-only" if os.environ.get("HACKMIT_API_ONLY") == "1" else "audio",
+        }
+
     @app.get("/fishies")
     def get_fishies():
         return {
@@ -68,8 +83,8 @@ def build_app(detector: SpeakerDetector, speaker_gains: dict[str, float]) -> Fas
         }
 
     @app.put("/fishies")
-    def put_fishy(fish: dict):
-        speaker_gains[fish["id"]] = volume_to_gain(fish["volume"])
+    def put_fishy(fish: FishUpdate):
+        speaker_gains[fish.id] = volume_to_gain(fish.volume)
         return {"ok": True}
 
     return app
@@ -83,11 +98,21 @@ def server() -> None:
         daemon=True,
     ).start()
 
+    if os.environ.get("HACKMIT_API_ONLY") == "1":
+        if os.environ.get("HACKMIT_MOCK_FISHIES") == "1":
+            detector.label_for_angles([45.0, 135.0, 225.0, 315.0])
+        print("[server] running control-only API; audio devices are disabled")
+        threading.Event().wait()
+        return
+
     try:
         mic = MicInput()
     except RuntimeError as e:
         # no mic connected - keep the HTTP API up anyway so it can still be tested/developed
         # against, just without any audio path
+        if os.environ.get("HACKMIT_MOCK_FISHIES") == "1":
+            detector.label_for_angles([45.0, 135.0, 225.0, 315.0])
+            print("[server] seeded mock fishies for control-path development")
         print(f"[server] {e} - running HTTP API only, no audio")
         threading.Event().wait()
         return

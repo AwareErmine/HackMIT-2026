@@ -3,6 +3,7 @@ import { useEffect, useState, type Ref } from "react";
 import { useDrag, useDrop } from "react-dnd";
 import { fishGifs, fishPngs } from "../images";
 import { getEmptyImage } from "react-dnd-html5-backend";
+import { putFishVolume } from "../api";
 
 type mousePositionType = { x: null | number; y: null | number };
 
@@ -71,8 +72,9 @@ export default function Fishes() {
         const { left, volume } = fishes.find((f) => f.id == item.id)!;
         const newLeft = delta.x + (left ?? 0);
         const topPercentDiff = (delta.y / window.innerHeight) * 100;
-        const newVolume = volume - topPercentDiff;
+        const newVolume = Math.max(0, Math.min(100, volume - topPercentDiff));
         moveFish(item.id, newVolume, newLeft);
+        void putFishVolume(item.id, newVolume).catch(() => undefined);
       },
     }),
     [fishes],

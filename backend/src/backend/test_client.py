@@ -12,12 +12,13 @@ a dependency for what's just a manual test script.
 """
 
 import json
+import os
 import threading
 import time
 import urllib.request
 from urllib.error import URLError
 
-BASE_URL = "http://127.0.0.1:5005"
+BASE_URL = os.environ.get("BACKEND_URL", "http://127.0.0.1:5005").rstrip("/")
 POLL_INTERVAL_SECONDS = 1
 
 
