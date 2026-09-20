@@ -17,7 +17,7 @@ function Fish({ id, idx }: { id: string; idx: number }) {
   return isDragging ? (
     <div
       ref={dragPreview as unknown as Ref<HTMLDivElement>}
-      style={{ bottom: `${volume}%`, left: `${left}px` }}
+      style={{ top: `${100 - volume}%`, left: `${left}px` }}
       className="absolute"
     >
       <img className="w-20" src={fishGifs[idx % fishGifs.length]} />
@@ -25,7 +25,7 @@ function Fish({ id, idx }: { id: string; idx: number }) {
   ) : (
     <div
       ref={drag as unknown as Ref<HTMLDivElement>}
-      style={{ bottom: `${volume}%`, left: `${left}px` }}
+      style={{ top: `${100 - volume}%`, left: `${left}px` }}
       className="absolute"
     >
       <img className="w-20" src={fishPngs[idx % fishPngs.length]} />
@@ -53,7 +53,7 @@ export default function Fishes() {
   return (
     <div
       ref={drop as unknown as Ref<HTMLDivElement>}
-      className="h-full w-full absolute overflow-clip"
+      className="relative w-full h-full overflow-clip"
     >
       {fishes.map((f, i) => (
         <Fish id={f.id} key={f.id} idx={i} />

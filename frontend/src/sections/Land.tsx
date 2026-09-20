@@ -4,13 +4,13 @@ import { useFishStore } from "../store";
 import { Slider } from "radix-ui";
 
 const FishSlider = ({ fid }: { fid: string }) => {
+  const fish = useFishStore((state) => state.getFish)(fid)!;
   const moveFish = useFishStore((state) => state.moveFish);
-  const fish = useFishStore((state) => state.fishes.find((f) => f.id == fid)!);
   return (
     <form>
       <Slider.Root
         className="flex items-center mx-[20%] gap-2"
-        defaultValue={[fish.volume]}
+        value={[fish.volume]}
         max={100}
         step={1}
         onValueChange={(val) => {
@@ -55,10 +55,7 @@ export default function Land() {
       >
         <div className="relative w-full h-full grid grid-cols-2 items-center">
           {fishes.map((fish, i) => (
-            <FishSlider
-              fid={fish.id}
-              key={`fish-slider-${i}-${fish.id}-${fish.volume}`}
-            />
+            <FishSlider fid={fish.id} key={`fish-slider-${i}-${fish.id}`} />
           ))}
         </div>
       </div>

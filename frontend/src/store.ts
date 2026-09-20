@@ -14,9 +14,10 @@ type Action = {
   addFish: (f: Fish) => void;
   removeFish: (fid: Fish["id"]) => void;
   moveFish: (fid: Fish["id"], volume: number, left: number) => void;
+  getFish: (fid: Fish["id"]) => Fish | undefined;
 };
 
-export const useFishStore = create<State & Action>((set) => ({
+export const useFishStore = create<State & Action>((set, get) => ({
   fishes: [
     { volume: 10, id: "Anya", left: Math.random() * window.innerWidth * 0.8 },
     { volume: 10, id: "Aramie", left: Math.random() * window.innerWidth * 0.8 },
@@ -27,6 +28,7 @@ export const useFishStore = create<State & Action>((set) => ({
       left: Math.random() * window.innerWidth * 0.8,
     },
   ],
+  getFish: (fid) => get().fishes.find((f) => f.id == fid),
   addFish: (f) =>
     set(({ fishes }) => ({
       fishes: [...fishes, f].sort((a, b) => a.id.localeCompare(b.id)),
