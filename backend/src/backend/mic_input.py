@@ -11,11 +11,15 @@ import queue
 
 import sounddevice as sd
 
-MIC_NAME_HINT = "XVF3000"   # substring used to find the mic in the device list
+MIC_NAME_HINT = "ReSpeaker 4 Mic Array"  # matches the OS-reported device name (confirmed via
+                                          # sd.query_devices(): "ReSpeaker 4 Mic Array (UAC1.0)");
+                                          # the XVF3000 chip name doesn't appear in it at all
 SAMPLE_RATE = 16000         # sample rate diart/pyannote expect
-CHANNEL_INDEX = 0           # channel 0 = cleaned, voice-focused audio on the XVF3000's
-                             # documented layout - unverified on actual hardware, confirm
-                             # with sd.query_devices() before trusting this
+CHANNEL_INDEX = 0           # channel 0 = cleaned, voice-focused audio, per Seeed's documented
+                             # layout for this device (6 channels total: 0=processed, 1-4=raw
+                             # per-mic, 5=AEC playback reference) - confirmed the device exposes
+                             # 6 input channels via sd.query_devices(), but channel 0's content
+                             # itself hasn't been confirmed by ear yet
 BLOCK_SIZE = 1024           # frames per chunk read from the stream
 
 
