@@ -1,17 +1,13 @@
 """
 audio_boost.py
 
-Takes incoming audio and the speaker currently talking, and scales the
-volume by that speaker's gain - one independent level per speaker, so each
-fish on the frontend can sit at its own height (loud/normal/quiet) rather
-than a single on/off boost target. Sits between speaker_detect.py (who's
-talking) and audio_output.py (final playback).
-
-Limitation: the mic gives one mixed-down audio channel, and diart reports
-only one "active" speaker per chunk (no true overlapping-voice separation),
-so only one speaker's gain is actually applied per chunk - whichever one is
-active. Two people talking over each other won't be heard at two different
-volumes.
+Scales one beamformed speaker stream by that speaker's gain - one
+independent level per speaker, so each fish on the frontend can sit at its
+own height (loud/normal/quiet). server.py calls apply() once per detected
+direction each chunk (via beamformer.py's separated streams), so - unlike
+the original single-active-speaker version - overlapping speakers each get
+their own gain applied and are mixed together afterward, not just whichever
+one is "active" this chunk.
 """
 
 import numpy as np
@@ -29,9 +25,9 @@ class AudioBooster:
         # updates one speaker's gain (e.g. from that speaker's fish being dragged), clamped to a safe range
         self.speaker_gains[speaker_label] = max(MIN_GAIN, min(MAX_GAIN, gain))
 
-    def apply(self, audio_chunk: np.ndarray, active_speaker: str) -> np.ndarray:
-        # scales the chunk's volume by the active speaker's gain (1.0 if they haven't been adjusted),
+    def apply(self, beam_audio: np.ndarray, speaker_label: str) -> np.ndarray:
+        # scales one beamformed speaker's stream by their gain (1.0 if not yet adjusted),
         # then clips so a boosted signal doesn't distort/overflow
-        gain = self.speaker_gains.get(active_speaker, DEFAULT_GAIN) if active_speaker else DEFAULT_GAIN
-        boosted = audio_chunk * gain
+        gain = self.speaker_gains.get(speaker_label, DEFAULT_GAIN)
+        boosted = beam_audio * gain
         return np.clip(boosted, -1.0, 1.0)

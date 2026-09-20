@@ -1,10 +1,16 @@
 """
 mic_input.py
 
-Opens the reSpeaker XVF3800 mic over USB and continuously reads channel 0
-(the pre-cleaned, voice-focused channel it sends). Hands raw audio chunks to
-server.py's processing loop via a thread-safe queue. First stage of the
-audio path: mic -> [mic_input] -> speaker_detect / audio_boost -> audio_output.
+Opens the ReSpeaker 4-Mic Array over USB and continuously reads the 4 raw
+per-mic channels (not the chip's single processed channel 0 - the DIY
+beamforming pipeline in doa.py/beamformer.py needs all 4 independently to
+compute directions and steer toward them itself). Hands raw audio chunks to
+server.py's processing loop via a thread-safe queue.
+
+First stage of the audio path: mic -> [mic_input] -> doa/beamformer/
+audio_boost -> audio_output. Requires the 6-channel firmware to be flashed
+on the array - the default firmware only exposes 2 real channels, which
+would make channels 1-4 duplicates/silence rather than 4 distinct mics.
 """
 
 import queue
@@ -12,15 +18,13 @@ import queue
 import sounddevice as sd
 
 MIC_NAME_HINT = "ReSpeaker 4 Mic Array"  # matches the OS-reported device name (confirmed via
-                                          # sd.query_devices(): "ReSpeaker 4 Mic Array (UAC1.0)");
-                                          # the XVF3000 chip name doesn't appear in it at all
-SAMPLE_RATE = 16000         # sample rate diart/pyannote expect
-CHANNEL_INDEX = 0           # channel 0 = cleaned, voice-focused audio, per Seeed's documented
-                             # layout for this device (6 channels total: 0=processed, 1-4=raw
-                             # per-mic, 5=AEC playback reference) - confirmed the device exposes
-                             # 6 input channels via sd.query_devices(), but channel 0's content
-                             # itself hasn't been confirmed by ear yet
-BLOCK_SIZE = 1024           # frames per chunk read from the stream
+                                          # sd.query_devices(): "ReSpeaker 4 Mic Array (UAC1.0)")
+SAMPLE_RATE = 16000          # sample rate the DOA/beamforming math is tuned for
+BLOCK_SIZE = 1024            # frames per chunk read from the stream
+
+OPEN_CHANNEL_COUNT = 5       # open channels 0-4 (channel 0 is discarded below - the device
+                              # doesn't let us request channels 1-4 without also opening 0)
+RAW_CHANNEL_SLICE = slice(1, 5)  # the 4 raw per-mic channels within that opened range
 
 
 class MicInput:
@@ -34,22 +38,22 @@ class MicInput:
     def _find_device(self):
         # scans available input devices and returns the one matching the mic name
         for idx, dev in enumerate(sd.query_devices()):
-            if MIC_NAME_HINT.lower() in dev["name"].lower() and dev["max_input_channels"] > 0:
+            if MIC_NAME_HINT.lower() in dev["name"].lower() and dev["max_input_channels"] >= OPEN_CHANNEL_COUNT:
                 return idx
-        raise RuntimeError(f"Could not find mic containing '{MIC_NAME_HINT}'")
+        raise RuntimeError(f"Could not find a {OPEN_CHANNEL_COUNT}-channel mic containing '{MIC_NAME_HINT}'")
 
     def _callback(self, indata, frames, time_info, status):
         # sounddevice calls this on its own thread for every audio block
         if status:
             print(f"[mic_input] stream status: {status}")
-        channel0 = indata[:, CHANNEL_INDEX].copy()
-        self.audio_queue.put(channel0)
+        raw_channels = indata[:, RAW_CHANNEL_SLICE].copy()  # shape (frames, 4)
+        self.audio_queue.put(raw_channels)
 
     def start(self):
         # opens and starts the input stream; audio starts flowing into the queue
         self.stream = sd.InputStream(
             device=self.device_index,
-            channels=max(CHANNEL_INDEX + 1, 1),
+            channels=OPEN_CHANNEL_COUNT,
             samplerate=self.samplerate,
             blocksize=self.blocksize,
             callback=self._callback,
@@ -63,5 +67,5 @@ class MicInput:
             self.stream.close()
 
     def read_chunk(self, timeout=None):
-        # blocks until the next audio chunk (numpy array) is available
+        # blocks until the next (frames, 4) raw audio chunk is available
         return self.audio_queue.get(timeout=timeout)

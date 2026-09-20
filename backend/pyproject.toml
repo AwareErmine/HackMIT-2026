@@ -10,7 +10,9 @@ requires-python = ">=3.11"
 dependencies = [
     "sounddevice",
     "numpy",
-    "diart",
+    "scipy",
+    'fastapi",
+    "uvicorn"
 ]
 
 [project.scripts]

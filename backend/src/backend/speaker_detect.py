@@ -1,45 +1,59 @@
 """
 speaker_detect.py
 
-Runs diart (built on pyannote-audio) over the live audio stream to figure out
-who is currently talking, assigning temporary labels (Speaker 1, Speaker 2, ...)
-with no voice-enrollment step. server.py feeds it audio chunks every ~1-2s and
-reads back the current speaker(s) to push to the frontend over UDP.
+Assigns stable "Speaker N" labels to the directions found by doa.py, so the
+same physical person keeps the same label - and the same fish on the
+frontend - as the conversation continues.
 
-Note: diart's real-time pipeline API may need small adjustments once tested
-directly on the UNO Q - this wraps it behind a simple
-process_chunk()/get_current_speakers() interface so the rest of the backend
-doesn't need to know diart's internals.
+This replaces the original diart-based approach: diart's voice-embedding
+labels don't have a natural way to apply to N separately-beamformed streams
+without running diart once per beam per chunk, which is too heavy to do in
+real time on top of SRP-PHAT + N beamformers already. Identity here is
+purely angle-based instead - simpler, and naturally more stable than
+embeddings (no more diart relabeling mid-conversation), but a new person
+standing at the same angle as an existing speaker will be (mis)treated as
+that same speaker.
 """
 
-import numpy as np
-from diart import SpeakerDiarization
+ANGLE_MATCH_TOLERANCE_DEGREES = 20  # a detected direction within this many degrees of a
+                                     # known speaker's angle is treated as the same person
+ANGLE_SMOOTHING = 0.3                # how much a new reading nudges a speaker's tracked angle
+                                      # (0 = never update, 1 = jump straight to the new reading)
 
 
 class SpeakerDetector:
-    def __init__(self, sample_rate=16000):
-        self.sample_rate = sample_rate
-        self.pipeline = SpeakerDiarization()
-        self.current_speakers = []  # most recent list of active speaker labels
-        self._label_map = {}        # maps diart's raw internal ids to friendly "Speaker N" names
+    def __init__(self):
+        self._speakers: dict[str, float] = {}  # label -> tracked angle in degrees
 
-    def _friendly_label(self, raw_id):
-        # converts diart's internal speaker id into a stable "Speaker N" label,
-        # assigning the next number the first time a given id is seen
-        if raw_id not in self._label_map:
-            self._label_map[raw_id] = f"Speaker {len(self._label_map) + 1}"
-        return self._label_map[raw_id]
+    def _closest_speaker(self, angle_degrees: float):
+        # finds the known speaker whose tracked angle is nearest this reading,
+        # accounting for wraparound at the 0/360 boundary
+        best_label, best_diff = None, None
+        for label, known_angle in self._speakers.items():
+            diff = abs(angle_degrees - known_angle) % 360
+            diff = min(diff, 360 - diff)
+            if best_diff is None or diff < best_diff:
+                best_label, best_diff = label, diff
+        return best_label, best_diff
 
-    def process_chunk(self, audio_chunk: np.ndarray):
-        # feeds one chunk of audio into diart and updates self.current_speakers
-        # with whoever diart currently thinks is talking
-        annotation = self.pipeline(audio_chunk, self.sample_rate)
-        speakers = set()
-        for _segment, _track, raw_id in annotation.itertracks(yield_label=True):
-            speakers.add(self._friendly_label(raw_id))
-        self.current_speakers = sorted(speakers)
-        return self.current_speakers
+    def label_for_angle(self, angle_degrees: float) -> str:
+        # returns the stable speaker label for this angle, creating a new one if this
+        # direction doesn't match any speaker seen before
+        label, diff = self._closest_speaker(angle_degrees)
+        if label is not None and diff <= ANGLE_MATCH_TOLERANCE_DEGREES:
+            old_angle = self._speakers[label]
+            signed_diff = ((angle_degrees - old_angle + 180) % 360) - 180
+            self._speakers[label] = old_angle + ANGLE_SMOOTHING * signed_diff
+            return label
 
-    def get_current_speakers(self):
-        # returns the last computed list of active speaker labels without recomputing
-        return self.current_speakers
+        new_label = f"Speaker {len(self._speakers) + 1}"
+        self._speakers[new_label] = angle_degrees
+        return new_label
+
+    def label_for_angles(self, angles_degrees: list[float]) -> list[str]:
+        # convenience: label a whole chunk's worth of detected directions at once
+        return [self.label_for_angle(a) for a in angles_degrees]
+
+    def get_known_speakers(self) -> list[str]:
+        # every speaker identified so far, not just this chunk's active ones
+        return list(self._speakers.keys())
