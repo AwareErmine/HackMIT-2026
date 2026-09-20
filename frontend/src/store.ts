@@ -20,6 +20,7 @@ type Action = {
 
 export const useFishStore = create<State & Action>((set, get) => ({
   fishes: [],
+  setFishes: (fishes) => set({ fishes }),
   getFish: (fid) => get().fishes.find((f) => f.id == fid),
   moveFish: (fid, volume, left) => {
     set(({ fishes }) => {
@@ -36,7 +37,8 @@ export const useFishStore = create<State & Action>((set, get) => ({
             ].sort((a, b) => a.id.localeCompare(b.id))
           : fishes,
       };
-    }),
+    });
+  },
   syncFishies: (remoteFishies) =>
     set(({ fishes }) => ({
       fishes: remoteFishies
