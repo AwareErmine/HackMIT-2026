@@ -1,11 +1,20 @@
 import { useFishStore } from "../store";
-import { useEffect, type Ref } from "react";
+import { useEffect, useState, type Ref } from "react";
 import { useDrag, useDrop } from "react-dnd";
 import { fishGifs, fishPngs } from "../images";
-import useMousePosition from "../hooks";
 import { getEmptyImage } from "react-dnd-html5-backend";
 
-function Fish({ id, idx }: { id: string; idx: number }) {
+type mousePositionType = { x: null | number; y: null | number };
+
+function Fish({
+  id,
+  idx,
+  mousePosition,
+}: {
+  id: string;
+  idx: number;
+  mousePosition: mousePositionType;
+}) {
   const { left, volume } = useFishStore((state) =>
     state.fishes.find((f) => f.id == id),
   )!;
@@ -16,10 +25,11 @@ function Fish({ id, idx }: { id: string; idx: number }) {
       isDragging: !!monitor.isDragging(),
     }),
   }));
-  const mousePosition = useMousePosition();
+
   useEffect(() => {
     preview(getEmptyImage(), { captureDraggingState: true });
   }, [preview]);
+
   return isDragging ? (
     <div
       style={{
@@ -49,6 +59,10 @@ function Fish({ id, idx }: { id: string; idx: number }) {
 export default function Fishes() {
   const fishes = useFishStore((state) => state.fishes);
   const moveFish = useFishStore((state) => state.moveFish);
+  const [mousePosition, setMousePosition] = useState<mousePositionType>({
+    x: null,
+    y: null,
+  });
   const [, drop] = useDrop(
     () => ({
       accept: "fish",
@@ -67,9 +81,11 @@ export default function Fishes() {
     <div
       ref={drop as unknown as Ref<HTMLDivElement>}
       className="relative w-full h-full overflow-clip"
+      onMouseOver={(ev) => setMousePosition({ x: ev.clientX, y: ev.clientY })}
+      onDragOver={(ev) => setMousePosition({ x: ev.clientX, y: ev.clientY })}
     >
       {fishes.map((f, i) => (
-        <Fish id={f.id} key={f.id} idx={i} />
+        <Fish id={f.id} key={f.id} idx={i} mousePosition={mousePosition} />
       ))}
     </div>
   );

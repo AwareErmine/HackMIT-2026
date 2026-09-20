@@ -48,7 +48,7 @@ export const useFishStore = create<State & Action>((set, get) => ({
               ...fishes.filter((f) => f.id !== fid),
               {
                 ...fish,
-                volume,
+                volume: volume < 100 ? volume : 100,
                 left,
               },
             ].sort((a, b) => a.id.localeCompare(b.id))
