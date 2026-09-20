@@ -20,6 +20,8 @@ Peak-finding also doesn't handle the 0/360 wraparound boundary, so a source
 sitting right near 0 degrees could occasionally get missed or double-counted.
 """
 
+from functools import lru_cache
+
 import numpy as np
 from scipy.signal import find_peaks
 
@@ -58,6 +60,19 @@ def _cross_spectrum_phat(sig_i: np.ndarray, sig_j: np.ndarray, n_fft: int) -> np
     return cross / np.maximum(np.abs(cross), 1e-12)
 
 
+@lru_cache(maxsize=4)
+def _steering_phases(n_frames: int, sample_rate: int) -> dict[tuple[int, int], np.ndarray]:
+    freqs = np.fft.rfftfreq(n_frames, d=1.0 / sample_rate)
+    angles = np.arange(0, 360, ANGLE_STEP_DEGREES)
+    delays = np.array([steering_delays_seconds(angle) for angle in angles])
+
+    return {
+        (i, j): np.exp(-1j * 2 * np.pi * (delays[:, i] - delays[:, j])[:, None] * freqs)
+        for i in range(4)
+        for j in range(i + 1, 4)
+    }
+
+
 def find_directions(chunk: np.ndarray, sample_rate: int) -> list[float]:
     # chunk: (frames, 4) raw audio, one column per raw mic channel
     # returns estimated source angles in degrees - zero, one, or several, depending on
@@ -66,8 +81,6 @@ def find_directions(chunk: np.ndarray, sample_rate: int) -> list[float]:
         return []
 
     n_frames, n_mics = chunk.shape
-    freqs = np.fft.rfftfreq(n_frames, d=1.0 / sample_rate)
-
     cross_phat = {}
     for i in range(n_mics):
         for j in range(i + 1, n_mics):
@@ -75,17 +88,12 @@ def find_directions(chunk: np.ndarray, sample_rate: int) -> list[float]:
 
     angles = np.arange(0, 360, ANGLE_STEP_DEGREES)
     power = np.zeros(len(angles))
+    steering_phases = _steering_phases(n_frames, sample_rate)
 
     # for each candidate angle, check how well the mics would line up in phase if a
     # source were actually there - real sources show up as local maxima
-    for idx, angle in enumerate(angles):
-        delays = steering_delays_seconds(angle)
-        score = 0.0
-        for (i, j), cross in cross_phat.items():
-            tau = delays[i] - delays[j]
-            steering = np.exp(1j * 2 * np.pi * freqs * tau)
-            score += np.real(np.sum(cross * np.conj(steering)))
-        power[idx] = score
+    for pair, cross in cross_phat.items():
+        power += np.real(steering_phases[pair] @ cross)
 
     if power.max() <= 0:
         return []

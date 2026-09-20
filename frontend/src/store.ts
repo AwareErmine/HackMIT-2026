@@ -12,7 +12,6 @@ type State = {
 };
 
 type Action = {
-  setFishes: (f: Fish[]) => void;
   moveFish: (fid: Fish["id"], volume: number, left: number) => void;
   getFish: (fid: Fish["id"]) => Fish | undefined;
   syncFishies: (fishies: BackendFish[]) => void;
@@ -20,7 +19,6 @@ type Action = {
 
 export const useFishStore = create<State & Action>((set, get) => ({
   fishes: [],
-  setFishes: (fishes) => set({ fishes }),
   getFish: (fid) => get().fishes.find((f) => f.id == fid),
   moveFish: (fid, volume, left) => {
     set(({ fishes }) => {
