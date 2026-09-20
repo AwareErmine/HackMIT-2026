@@ -53,7 +53,7 @@ export default function Fishes() {
   return (
     <div
       ref={drop as unknown as Ref<HTMLDivElement>}
-      className="z-1 h-screen w-screen absolute overflow-clip"
+      className="h-full w-full absolute overflow-clip"
     >
       {fishes.map((f, i) => (
         <Fish id={f.id} key={f.id} idx={i} />
