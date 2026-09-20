@@ -9,7 +9,7 @@ const FishSlider = ({ fid }: { fid: string }) => {
   return (
     <form>
       <Slider.Root
-        className="relative flex items-center"
+        className="flex items-center mx-[20%] gap-2"
         defaultValue={[fish.volume]}
         max={100}
         step={1}
@@ -17,13 +17,16 @@ const FishSlider = ({ fid }: { fid: string }) => {
           moveFish(fid, val[0], fish.left);
         }}
       >
-        <Slider.Track className="relative grow bg-gray-500 h-5">
-          <Slider.Range className="absolute bg-black h-5" />
-        </Slider.Track>
-        <Slider.Thumb
-          className="block rounded-full h-10 aspect-square bg-blue-500"
-          aria-label="Volume"
-        />
+        <p>{Math.round(fish.volume)}</p>
+        <div className="flex items-center grow relative">
+          <Slider.Track className="relative grow bg-blue-950 h-1.75 rounded-full outline-1 outline-gray-300">
+            <Slider.Range className="absolute bg-gray-300 h-1.75 rounded-l-full" />
+          </Slider.Track>
+          <Slider.Thumb
+            className="block rounded-full h-6 focus:ring-2 ring-blue-950 aspect-square bg-gray-300 shadow-sm transition-colors"
+            aria-label="Volume"
+          />
+        </div>
       </Slider.Root>
     </form>
   );
@@ -36,7 +39,7 @@ export default function Land() {
     <>
       <button
         onClick={() => setHidden(!hidden)}
-        className="absolute left-[50%] z-10 px-10 pt-2 pb-1 rounded-t-full bg-amber-100 hover:opacity-80 transition-all"
+        className="absolute left-[50%] z-10 px-10 pt-2 pb-1 rounded-t-full bg-amber-100 hover:bg-gray-200 transition-all"
         style={{
           bottom: hidden ? "0" : "40%",
           transform: "translate(-50%, 0)",
@@ -50,7 +53,7 @@ export default function Land() {
           bottom: hidden ? "-40%" : "0",
         }}
       >
-        <div className="relative w-full h-full grid grid-cols-2">
+        <div className="relative w-full h-full grid grid-cols-2 items-center">
           {fishes
             .sort((a, b) => a.id.localeCompare(b.id))
             .map((fish, i) => (
