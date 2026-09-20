@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Menu } from "lucide-react";
 import { useFishStore } from "../store";
 import { Slider } from "radix-ui";
+import { putFishVolume } from "../api";
 
 const FishSlider = ({ fid }: { fid: string }) => {
   const fish = useFishStore((state) => state.getFish)(fid)!;
@@ -15,6 +16,7 @@ const FishSlider = ({ fid }: { fid: string }) => {
         step={1}
         onValueChange={(val) => {
           moveFish(fid, val[0], fish.left);
+          void putFishVolume(fid, val[0]).catch(() => undefined);
         }}
       >
         <p>{Math.round(fish.volume)}</p>

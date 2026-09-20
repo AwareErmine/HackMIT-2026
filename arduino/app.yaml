@@ -1,2 +1,4 @@
 name: HackMIT
 description: Audio processing backend for the Arduino UNO Q
+ports:
+  - 5005
