@@ -55,7 +55,10 @@ export default function Land() {
       >
         <div className="relative w-full h-full grid grid-cols-2 items-center">
           {fishes.map((fish, i) => (
-            <FishSlider fid={fish.id} key={`fish-slider-${i}-${fish.id}`} />
+            <FishSlider
+              fid={fish.id}
+              key={`fish-slider-${i}-${fish.id}-${fish.volume}`}
+            />
           ))}
         </div>
       </div>

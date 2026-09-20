@@ -1,6 +1,6 @@
 import { useFishStore } from "../store";
 import { type Ref } from "react";
-import { useDrag, useDrop, DragPreviewImage } from "react-dnd";
+import { useDrag, useDrop } from "react-dnd";
 import { fishGifs, fishPngs } from "../images";
 
 function Fish({ id, idx }: { id: string; idx: number }) {
