@@ -12,7 +12,6 @@ type State = {
 };
 
 type Action = {
-  setFishes: (f: Fish[]) => void;
   moveFish: (fid: Fish["id"], volume: number, left: number) => void;
   getFish: (fid: Fish["id"]) => Fish | undefined;
   syncFishies: (fishies: BackendFish[]) => void;
@@ -36,7 +35,8 @@ export const useFishStore = create<State & Action>((set, get) => ({
             ].sort((a, b) => a.id.localeCompare(b.id))
           : fishes,
       };
-    }),
+    });
+  },
   syncFishies: (remoteFishies) =>
     set(({ fishes }) => ({
       fishes: remoteFishies
