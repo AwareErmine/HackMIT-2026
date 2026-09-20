@@ -26,9 +26,19 @@ from scipy.signal import find_peaks
 from backend.mic_geometry import steering_delays_seconds
 
 ANGLE_STEP_DEGREES = 5            # candidate angle resolution to scan
-PEAK_HEIGHT_RATIO = 0.5           # a candidate angle counts as a source if its power is
-                                   # at least this fraction of the strongest peak this chunk
+PEAK_HEIGHT_RATIO = 0.7           # a candidate angle counts as a source if its power is
+                                   # at least this fraction of the strongest peak this chunk -
+                                   # raised from 0.5 so a fainter, more distant voice bleeding
+                                   # into the same chunk as a closer one doesn't also register
 MIN_PEAK_SEPARATION_DEGREES = 30  # two peaks closer than this are treated as one source
+
+MIN_CHUNK_RMS = 0.02  # skip direction-finding entirely if the loudest signal in this chunk
+                       # isn't at least this loud - SRP-PHAT only compares directions to each
+                       # other, it has no idea of distance, so this is what actually rejects
+                       # quiet/distant background chatter instead of just picking the "best"
+                       # direction out of noise that shouldn't count at all. Needs live tuning
+                       # to the room: raise it if distant chatter still gets picked up, lower
+                       # it if your own voice sometimes doesn't register.
 
 
 def _cross_spectrum_phat(sig_i: np.ndarray, sig_j: np.ndarray, n_fft: int) -> np.ndarray:
@@ -44,6 +54,9 @@ def find_directions(chunk: np.ndarray, sample_rate: int) -> list[float]:
     # chunk: (frames, 4) raw audio, one column per raw mic channel
     # returns estimated source angles in degrees - zero, one, or several, depending on
     # how many people are talking this chunk
+    if np.sqrt(np.mean(chunk**2)) < MIN_CHUNK_RMS:
+        return []
+
     n_frames, n_mics = chunk.shape
     freqs = np.fft.rfftfreq(n_frames, d=1.0 / sample_rate)
 
