@@ -1,21 +1,19 @@
 import { useFishStore } from "../store";
-import type { Fish as FishProps } from "../store";
-import { useState, type Ref } from "react";
+import { type Ref } from "react";
 import { useDrag, useDrop } from "react-dnd";
 
 function Fish({ id }: { id: string }) {
-  const [randomFallBack] = useState(() => Math.random() * 100);
   const { left, volume } = useFishStore((state) =>
     state.fishes.find((f) => f.id == id),
-  ) as FishProps;
+  )!;
   const [, drag] = useDrag(() => ({
     type: "fish",
-    item: { id, left: left ?? randomFallBack, volume } as FishProps,
+    item: { id },
   }));
   return (
     <div
       ref={drag as unknown as Ref<HTMLDivElement>}
-      style={{ bottom: `${volume}%`, left: `${left ?? randomFallBack}%` }}
+      style={{ bottom: `${volume}%`, left: `${left}px` }}
       className="absolute h-20 aspect-square bg-yellow-300 rounded-full opacity-70"
     ></div>
   );
@@ -23,21 +21,21 @@ function Fish({ id }: { id: string }) {
 
 export default function Fishes() {
   const fishes = useFishStore((state) => state.fishes);
-  const setFishVolume = useFishStore((state) => state.setFishVolume);
-  const setFishLeft = useFishStore((state) => state.setFishLeft);
-  const [, drop] = useDrop(() => ({
-    accept: "fish",
-    drop: (item: FishProps, monitor) => {
-      const pos = monitor.getDifferenceFromInitialOffset();
-      if (pos) {
-        const leftPercent = (pos.x / window.innerWidth) * 100;
-        setFishLeft(item.id, (item.left ?? 0) + leftPercent);
-
-        const topPercent = (pos.y / window.innerHeight) * 100;
-        setFishVolume(item.id, item.volume - topPercent);
-      }
-    },
-  }));
+  const moveFish = useFishStore((state) => state.moveFish);
+  const [, drop] = useDrop(
+    () => ({
+      accept: "fish",
+      drop: (item: { id: string }, monitor) => {
+        const delta = monitor.getDifferenceFromInitialOffset()!;
+        const { left, volume } = fishes.find((f) => f.id == item.id)!;
+        const newLeft = delta.x + (left ?? 0);
+        const topPercentDiff = (delta.y / window.innerHeight) * 100;
+        const newVolume = volume - topPercentDiff;
+        moveFish(item.id, newVolume, newLeft);
+      },
+    }),
+    [fishes],
+  );
   return (
     <div
       ref={drop as unknown as Ref<HTMLDivElement>}

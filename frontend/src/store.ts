@@ -2,7 +2,7 @@ import { create } from "zustand";
 
 export type Fish = {
   volume: number; // range from 0-100 (percent from bottom)
-  left?: number; // percent of screen from left
+  left: number; // percent of screen from left
   id: string;
 };
 
@@ -13,48 +13,37 @@ type State = {
 type Action = {
   addFish: (f: Fish) => void;
   removeFish: (fid: Fish["id"]) => void;
-  setFishVolume: (fid: Fish["id"], volume: number) => void;
-  setFishLeft: (fid: Fish["id"], left: number) => void;
+  moveFish: (fid: Fish["id"], volume: number, left: number) => void;
 };
 
 export const useFishStore = create<State & Action>((set) => ({
   fishes: [
-    { volume: 10, id: "Anya" },
-    { volume: 10, id: "Aramie" },
-    { volume: 10, id: "Joyce" },
-    { volume: 10, id: "Rebecca" },
+    { volume: 10, id: "Anya", left: Math.random() * window.innerWidth * 0.8 },
+    { volume: 10, id: "Aramie", left: Math.random() * window.innerWidth * 0.8 },
+    { volume: 10, id: "Joyce", left: Math.random() * window.innerWidth * 0.8 },
+    {
+      volume: 10,
+      id: "Rebecca",
+      left: Math.random() * window.innerWidth * 0.8,
+    },
   ],
   addFish: (f) => set(({ fishes }) => ({ fishes: [...fishes, f] })),
   removeFish: (fid) =>
     set(({ fishes }) => ({ fishes: fishes.filter((f) => f.id !== fid) })),
-  setFishVolume: (fid, volume) =>
+  moveFish: (fid, volume, left) =>
     set(({ fishes }) => {
       const fish = fishes.find((f) => f.id == fid);
-      return fish
-        ? {
-            fishes: [
+      return {
+        fishes: fish
+          ? [
               ...fishes.filter((f) => f.id !== fid),
               {
                 ...fish,
                 volume,
-              },
-            ],
-          }
-        : {};
-    }),
-  setFishLeft: (fid, left) =>
-    set(({ fishes }) => {
-      const fish = fishes.find((f) => f.id == fid);
-      return fish
-        ? {
-            fishes: [
-              ...fishes.filter((f) => f.id !== fid),
-              {
-                ...fish,
                 left,
               },
-            ],
-          }
-        : {};
+            ]
+          : fishes,
+      };
     }),
 }));
