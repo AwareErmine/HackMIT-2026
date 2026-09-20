@@ -1,21 +1,35 @@
 import { useFishStore } from "../store";
 import { type Ref } from "react";
-import { useDrag, useDrop } from "react-dnd";
+import { useDrag, useDrop, DragPreviewImage } from "react-dnd";
+import { fishGifs, fishPngs } from "../images";
 
-function Fish({ id }: { id: string }) {
+function Fish({ id, idx }: { id: string; idx: number }) {
   const { left, volume } = useFishStore((state) =>
     state.fishes.find((f) => f.id == id),
   )!;
-  const [, drag] = useDrag(() => ({
+  const [{ isDragging }, drag, dragPreview] = useDrag(() => ({
     type: "fish",
     item: { id },
+    collect: (monitor) => ({
+      isDragging: !!monitor.isDragging(),
+    }),
   }));
-  return (
+  return isDragging ? (
+    <div
+      ref={dragPreview as unknown as Ref<HTMLDivElement>}
+      style={{ bottom: `${volume}%`, left: `${left}px` }}
+      className="absolute"
+    >
+      <img className="w-20" src={fishGifs[idx % fishGifs.length]} />
+    </div>
+  ) : (
     <div
       ref={drag as unknown as Ref<HTMLDivElement>}
       style={{ bottom: `${volume}%`, left: `${left}px` }}
-      className="absolute h-20 aspect-square bg-yellow-300 rounded-full opacity-70"
-    ></div>
+      className="absolute"
+    >
+      <img className="w-20" src={fishPngs[idx % fishPngs.length]} />
+    </div>
   );
 }
 
@@ -41,8 +55,8 @@ export default function Fishes() {
       ref={drop as unknown as Ref<HTMLDivElement>}
       className="z-1 h-screen w-screen absolute overflow-clip"
     >
-      {fishes.map((f) => (
-        <Fish id={f.id} key={f.id} />
+      {fishes.map((f, i) => (
+        <Fish id={f.id} key={f.id} idx={i} />
       ))}
     </div>
   );
