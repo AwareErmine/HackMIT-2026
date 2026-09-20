@@ -27,9 +27,16 @@ export const useFishStore = create<State & Action>((set) => ({
       left: Math.random() * window.innerWidth * 0.8,
     },
   ],
-  addFish: (f) => set(({ fishes }) => ({ fishes: [...fishes, f] })),
+  addFish: (f) =>
+    set(({ fishes }) => ({
+      fishes: [...fishes, f].sort((a, b) => a.id.localeCompare(b.id)),
+    })),
   removeFish: (fid) =>
-    set(({ fishes }) => ({ fishes: fishes.filter((f) => f.id !== fid) })),
+    set(({ fishes }) => ({
+      fishes: fishes
+        .filter((f) => f.id !== fid)
+        .sort((a, b) => a.id.localeCompare(b.id)),
+    })),
   moveFish: (fid, volume, left) =>
     set(({ fishes }) => {
       const fish = fishes.find((f) => f.id == fid);
@@ -42,7 +49,7 @@ export const useFishStore = create<State & Action>((set) => ({
                 volume,
                 left,
               },
-            ]
+            ].sort((a, b) => a.id.localeCompare(b.id))
           : fishes,
       };
     }),
