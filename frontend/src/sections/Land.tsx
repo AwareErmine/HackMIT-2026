@@ -48,12 +48,12 @@ export default function Land() {
         <Menu size={16} />
       </button>
       <div
-        className="absolute z-10 bottom-0 w-screen h-[40%] transition-all bg-amber-100"
+        className="absolute z-10 bottom-0 w-screen h-[40%] overflow-y-scroll transition-all bg-amber-100"
         style={{
           bottom: hidden ? "-40%" : "0",
         }}
       >
-        <div className="relative w-full h-full grid grid-cols-2 items-center">
+        <div className="relative w-full min-h-full grid grid-cols-2 gap-4 py-8 items-center">
           {fishes.map((fish, i) => (
             <FishSlider fid={fish.id} key={`fish-slider-${i}-${fish.id}`} />
           ))}
