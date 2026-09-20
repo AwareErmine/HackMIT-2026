@@ -26,10 +26,18 @@ from scipy.signal import find_peaks
 from backend.mic_geometry import steering_delays_seconds
 
 ANGLE_STEP_DEGREES = 5            # candidate angle resolution to scan
-PEAK_HEIGHT_RATIO = 0.7           # a candidate angle counts as a source if its power is
+PEAK_HEIGHT_RATIO = 0.85          # a candidate angle counts as a source if its power is
                                    # at least this fraction of the strongest peak this chunk -
-                                   # raised from 0.5 so a fainter, more distant voice bleeding
-                                   # into the same chunk as a closer one doesn't also register
+                                   # raised from 0.5, then 0.7, because a single voice was
+                                   # still producing two "sources": a wall/table reflection (or
+                                   # just the array's coarse angular resolution at 6.4cm across)
+                                   # shows up as a secondary peak >=MIN_PEAK_SEPARATION_DEGREES
+                                   # away from the real direction, but weaker than it - and once
+                                   # split here, speaker_detect.py's narrower merge tolerance can
+                                   # never recombine them back into one speaker/fish. A genuine
+                                   # second talker has their own direct-path peak, comparable in
+                                   # strength to the first, so this doesn't cost real overlap
+                                   # detection - only reflections and sidelobes, which are weaker
 MIN_PEAK_SEPARATION_DEGREES = 30  # two peaks closer than this are treated as one source
 
 MIN_CHUNK_RMS = 0.02  # skip direction-finding entirely if the loudest signal in this chunk
