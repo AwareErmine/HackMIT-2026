@@ -11,7 +11,7 @@ dependencies = [
     "sounddevice",
     "numpy",
     "scipy",
-    'fastapi",
+    "fastapi",
     "uvicorn"
 ]
 
